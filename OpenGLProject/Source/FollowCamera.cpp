@@ -54,11 +54,15 @@ void FollowCamera::Update(float deltaTime) {
     //! カメラのオフセットと上方ベクトルをピッチで変換
     m_offset = Vector3::Transform(m_offset, pitch);
     m_up = Vector3::Transform(m_up, pitch);
-    cameraPos = m_actualPos + m_offset;
   }
-
-  // Matrix4 view = Matrix4::CreateLookAt(cameraPos, m_actualPos, m_up);
+  #if 1
+  cameraPos = m_actualPos + m_offset;
   Matrix4 view = Matrix4::CreateLookAt(cameraPos, target, m_up);
+  #else
+  cameraPos = m_offset + m_actualPos;
+  Matrix4 view = Matrix4::CreateLookAt(cameraPos, target, m_up);
+  #endif
+
   SetViewMatrix(view);
 }
 
