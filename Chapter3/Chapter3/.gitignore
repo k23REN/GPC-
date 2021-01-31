@@ -1,0 +1,9 @@
+/.vs/
+
+/Debug/*
+!/Debug/*.dll
+
+/Release/*
+!/Release/*.dll
+
+/*.user

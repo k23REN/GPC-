@@ -1,0 +1,11 @@
+/.vs/
+
+/Debug/*
+!/Debug/*.dll
+
+/Release/*
+!/Release/*.dll
+
+/OpenGLProject/Debug/
+/OpenGLProject/Release/
+/OpenGLProject/*.user

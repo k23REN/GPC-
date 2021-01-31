@@ -1,0 +1,11 @@
+/.vs/
+
+/Debug/*
+!/Debug/*.dll
+
+/Release/*
+!/Release/*.dll
+
+/Chapter1/Debug/
+/Chapter1/Release/
+/Chapter1/*.user
