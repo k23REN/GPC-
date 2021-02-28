@@ -4,8 +4,10 @@
 #include "Renderer.h"
 
 FollowActor::FollowActor(Game* game) : Actor(game) {
-  m_pMeshComp = new MeshComponent(
-      this, game->GetRenderer()->GetMesh("../Assets/RacingCar.gpmesh"));
+  m_pMeshComp = new SkeletalMeshComponent(
+      this, game->GetRenderer()->GetMesh("../Assets/CatWarrior.gpmesh"));
+  m_pMeshComp->SetSkeleton(game->GetSkeleton("../Assets/CatWarrior.gpskel"));
+  m_pMeshComp->PlayAnimation(game->GetAnimation("../Assets/CatActionIdle.gpanim"));
 
   SetPosition(Vector3(0.0f, 0.0f, -100.0f));
 
@@ -64,6 +66,19 @@ void FollowActor::ActorInput(const uint8_t* keys) {
       m_pCameraComp->SetPitchSpeed(0.0f);
 
     }
+  }
+
+  //! “®‚«Žn‚ß‚½‚©
+  if (!m_moving && !Math::NearZero(forwardSpeed)) {
+    m_moving = true;
+    m_pMeshComp->PlayAnimation(
+        GetGame()->GetAnimation("../Assets/CatRunSprint.gpanim"), 1.25f,true);
+  }
+  //! ‚à‚µ‚­‚Í“®‚«‚ðŽ~‚ß‚½‚©
+  else if (m_moving && Math::NearZero(forwardSpeed)) {
+    m_moving = false;
+    m_pMeshComp->PlayAnimation(
+        GetGame()->GetAnimation("../Assets/CatActionIdle.gpanim"), 1.0f, true);
   }
 
   m_pMoveComp->SetForwardSpeed(forwardSpeed);

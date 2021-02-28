@@ -5,7 +5,7 @@
 
 OrbitActor::OrbitActor(Game* game) : Actor(game) {
   m_pMeshComp = new MeshComponent(
-      this, game->GetRenderer()->GetMesh("../Assets/RacingCar.gpmesh"));
+      this, game->GetRenderer()->GetMesh("../Assets/RacingCar.gpmesh"), false);
   SetPosition(Vector3(0.0f, 0.0f, -100.0f));
 
   m_pCameraComp = new OrbitCamera(this);

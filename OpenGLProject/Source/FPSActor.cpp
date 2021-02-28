@@ -13,7 +13,7 @@ FPSActor::FPSActor(Game* game) : Actor(game) {
   m_pFPSModel = new Actor(game);
   m_pFPSModel->SetScale(0.75f);
   m_pMeshComp = new MeshComponent(
-      m_pFPSModel, game->GetRenderer()->GetMesh("../Assets/Rifle.gpmesh"));
+      m_pFPSModel, game->GetRenderer()->GetMesh("../Assets/Rifle.gpmesh"),false);
 }
 
 void FPSActor::UpdateActor(float deltaTime) {

@@ -6,9 +6,10 @@
 #include "Texture.h"
 #include "VertexArray.h"
 
-MeshComponent::MeshComponent(Actor* a_owner, Mesh* a_mesh)
+MeshComponent::MeshComponent(Actor* a_owner, Mesh* a_mesh, bool a_isSkeletal)
     : Component(a_owner), m_pMesh(nullptr), m_textureIndex(0) {
   m_pMesh = a_mesh;
+  m_isSkeletal = a_isSkeletal;
   m_pOwner->GetGame()->GetRenderer()->AddMeshComp(this);
 }
 

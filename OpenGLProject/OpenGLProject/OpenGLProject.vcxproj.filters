@@ -105,6 +105,18 @@
     <ClCompile Include="..\Source\SplineCamera.cpp">
       <Filter>ソース ファイル</Filter>
     </ClCompile>
+    <ClCompile Include="..\Source\BoneTransform.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\SkeletalMeshComponent.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Animation.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Source\Skeleton.cpp">
+      <Filter>ソース ファイル</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Source\Actor.h">
@@ -194,6 +206,21 @@
     <ClInclude Include="..\Source\SplineActor.h">
       <Filter>ヘッダー ファイル</Filter>
     </ClInclude>
+    <ClInclude Include="..\Source\BoneTransform.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\SkeletalMeshComponent.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\MatrixPalette.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Skeleton.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Source\Animation.h">
+      <Filter>ヘッダー ファイル</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\Shader\Basic.frag">
@@ -221,6 +248,9 @@
       <Filter>Shader</Filter>
     </None>
     <None Include="..\Shader\BasicMesh.frag">
+      <Filter>Shader</Filter>
+    </None>
+    <None Include="..\Shader\Skinned.vert">
       <Filter>Shader</Filter>
     </None>
   </ItemGroup>

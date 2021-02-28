@@ -1,11 +1,17 @@
 #pragma once
 class VertexArray {
  public:
-  VertexArray(const float* a_verts, unsigned int a_numVerts,
+  enum Layout 
+  { 
+      PosNormTex,
+      PosNormSkinTex
+  };
+
+  VertexArray(const void* a_verts, unsigned int a_numVerts,Layout a_layout,
               const unsigned int* a_indices, unsigned int a_numIndices);
   ~VertexArray();
 
-    /**
+ /**
    * @fn
    * 頂点配列をアクティブにする
    * @brief 描画を可能に設定

@@ -195,9 +195,9 @@ class Vector2 {
 // 3D Vector
 class Vector3 {
  public:
-  float x;
-  float y;
-  float z;
+  float x = 0.0f;
+  float y = 0.0f;
+  float z = 0.0f;
 
   Vector3() : x(0.0f), y(0.0f), z(0.0f) {}
 
@@ -674,16 +674,32 @@ class Matrix4 {
     return Matrix4(temp);
   }
 
+  //static Matrix4 CreateFromTRS(const Vector3& translation,
+  //                               const Quaternion& rotation,
+  //                               const Vector3& scale) {
+  //  return Matrix4::CreateTranslation(translation) *
+  //          Matrix4::CreateFromQuaternion(rotation) * 
+  //          Matrix4::CreateScale(scale);
+  //}
+
+	static Matrix4 CreateFromSRT(const Vector3& scale,
+                                    const Quaternion& rotation,
+                                    const Vector3& translation) {
+    return
+                  Matrix4::CreateFromQuaternion(rotation) *
+                  Matrix4::CreateTranslation(translation);
+  }
+
   static const Matrix4 Identity;
 };
 
 // (Unit) Quaternion
 class Quaternion {
  public:
-  float x;
-  float y;
-  float z;
-  float w;
+  float x = 0.0f;
+  float y = 0.0f;
+  float z = 0.0f;
+  float w = 0.0f;
 
   Quaternion() { *this = Quaternion::Identity; }
 
@@ -813,6 +829,60 @@ class Quaternion {
     retVal.w = p.w * q.w - Vector3::Dot(pv, qv);
 
     return retVal;
+  }
+
+  //回転行列をクォータニオンにする
+  static const Quaternion MatrixToQuaternion(const Matrix4& a_mat) {
+    Quaternion q;
+    
+    auto& mat = a_mat.mat;
+
+    float s;
+    float tr = mat[0][0] + mat[1][1] + mat[2][2] + 1.0f;
+    if (tr >= 1.0f) {
+      s = 0.5f / sqrt(tr);
+      q.w = 0.25f / s;
+      q.x = (mat[1][2] - mat[2][1]) * s;
+      q.y = (mat[2][0] - mat[0][2]) * s;
+      q.z = (mat[0][1] - mat[1][0]) * s;
+      return q;
+    } else {
+      float max;
+      if (mat[1][1] > mat[2][2]) {
+        max = mat[1][1];
+      } else {
+        max = mat[2][2];
+      }
+
+      if (max < mat[0][0]) {
+        s = sqrt(mat[0][0] - (mat[1][1] + mat[2][2]) + 1.0f);
+        float x = s * 0.5f;
+        s = 0.5f / s;
+        q.x = x;
+        q.y = (mat[0][1] + mat[1][0]) * s;
+        q.z = (mat[2][0] + mat[0][2]) * s;
+        q.w = (mat[1][2] - mat[2][1]) * s;
+        return q;
+      } else if (max == mat[1][1]) {
+        s = sqrt(mat[1][1] - (mat[2][2] + mat[0][0]) + 1.0f);
+        float y = s * 0.5f;
+        s = 0.5f / s;
+        q.x = (mat[0][1] + mat[1][0]) * s;
+        q.y = y;
+        q.z = (mat[1][2] + mat[2][1]) * s;
+        q.w = (mat[2][0] - mat[0][2]) * s;
+        return q;
+      } else {
+        s = sqrt(mat[2][2] - (mat[0][0] + mat[1][1]) + 1.0f);
+        float z = s * 0.5f;
+        s = 0.5f / s;
+        q.x = (mat[2][0] + mat[0][2]) * s;
+        q.y = (mat[1][2] + mat[2][1]) * s;
+        q.z = z;
+        q.w = (mat[0][1] - mat[1][0]) * s;
+        return q;
+      }
+    }
   }
 
   static const Quaternion Identity;
@@ -1013,7 +1083,7 @@ static const Vector3 LightGreen(0.56f, 0.93f, 0.56f);
    dot = _mm_add_ss(dot, temp);
    // x = dot.m128_f32[2].
    temp = _mm_shuffle_ps(temp, temp, _MM_SHUFFLE(1, 1, 1, 1));
-   // dot.m_128_f32[0] = (x + y) + z.
+   // dot.ma_mat[0][1]8_f32[0] = (x + y) + z.
    dot = _mm_add_ss(dot, temp);
    // dotの全要素にxを代入し、先頭のdot.m128_f32[0]を返す.
    return _mm_shuffle_ps(dot, dot, _MM_SHUFFLE(0, 0, 0, 0));
@@ -1027,7 +1097,7 @@ static const Vector3 LightGreen(0.56f, 0.93f, 0.56f);
    dot = _mm_add_ss(dot, temp);
    // x = dot.m128_f32[2].
    temp = _mm_shuffle_ps(temp, temp, _MM_SHUFFLE(1, 1, 1, 1));
-   // dot.m_128_f32[0] = (x + y) + z.
+   // dot.ma_mat[0][1]8_f32[0] = (x + y) + z.
    dot = _mm_add_ss(dot, temp);
    // dotの全要素にxを代入し、先頭のdot.m128_f32[0]を返す.
    return _mm_shuffle_ps(dot, dot, _MM_SHUFFLE(0, 0, 0, 0));

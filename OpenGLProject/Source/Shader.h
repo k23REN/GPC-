@@ -37,7 +37,7 @@ class Shader
    * @return なし
    */
   void SetMatrixUniform(const char* a_name, const Matrix4& a_matrix);
-
+  void SetMatrixUniforms(const char* name, Matrix4* matrices, unsigned count);
   /**
   * @fn
   * ベクトルをシェーダに渡す

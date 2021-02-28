@@ -86,18 +86,9 @@ void Game::HandleKeyPress(int key) {
     case '2':
     case '3':
     case '4':
-      ChangeCamera(key);
       break;
     case SDL_BUTTON_LEFT: {
-      // Get start point (in center of screen on near plane)
-      Vector3 screenPoint(0.0f, 0.0f, 0.0f);
-      Vector3 start = m_pRenderer->Unproject(screenPoint);
-      // Get end point (in center of screen, between near and far)
-      screenPoint.z = 0.9f;
-      Vector3 end = m_pRenderer->Unproject(screenPoint);
-      // Set spheres to points
-      m_startSphere->SetPosition(start);
-      m_endSphere->SetPosition(end);
+
       break;
     }
     default:
@@ -152,12 +143,12 @@ void Game::LoadData() {
     q = Quaternion::Concatenate(
         q, Quaternion(Vector3::UnitZ, Math::Pi + Math::Pi / 4.0f));
     a->SetRotation(q);
-    MeshComponent* mc = new MeshComponent(a, m_pRenderer->GetMesh("../Assets/Cube.gpmesh"));
+    MeshComponent* mc = new MeshComponent(a, m_pRenderer->GetMesh("../Assets/Cube.gpmesh"), false);
 
     a = new Actor(this);
     a->SetPosition(Vector3(200.0f, -75.0f, 0.0f));
     a->SetScale(3.0f);
-    mc = new MeshComponent(a, m_pRenderer->GetMesh("../Assets/Sphere.gpmesh"));
+    mc = new MeshComponent(a, m_pRenderer->GetMesh("../Assets/Sphere.gpmesh"), false);
   }
 
   //! マップ生成
@@ -203,11 +194,7 @@ void Game::LoadData() {
   dir.m_specColor = Vector3(0.8f, 0.8f, 0.8f);
 
   //! カメラ生成
-  //m_pCameraActor = new CameraActor(this);
-  m_pFPSActor = new FPSActor(this);
   m_pFollowActor = new FollowActor(this);
-  m_pOrbitActor = new OrbitActor(this);
-  m_pSplineActor = new SplineActor(this);
   
   //! UI生成
   a = new Actor(this);
@@ -228,20 +215,6 @@ void Game::LoadData() {
   sc = new SpriteComponent(a);
   sc->SetTexture(m_pRenderer->GetTexture("../Assets/Radar.png"));
 
-  ChangeCamera('1');
-
-  MeshComponent* mc;
-  m_startSphere = new Actor(this);
-  m_startSphere->SetPosition(Vector3(10000.0f, 0.0f, 0.0f));
-  m_startSphere->SetScale(0.25f);
-  mc = new MeshComponent(m_startSphere,
-                         m_pRenderer->GetMesh("../Assets/Sphere.gpmesh"));
-  m_endSphere = new Actor(this);
-  m_endSphere->SetPosition(Vector3(10000.0f, 0.0f, 0.0f));
-  m_endSphere->SetScale(0.25f);
-  mc = new MeshComponent(m_endSphere,
-                         m_pRenderer->GetMesh("../Assets/Sphere.gpmesh"));
-  mc->SetTextureIndex(1);
 }
 
 void Game::UnloadData() {
@@ -284,34 +257,34 @@ void Game::RemoveActor(Actor* actor) {
   }
 }
 
-void Game::ChangeCamera(int mode) {
-  m_pFPSActor->SetState(Actor::ePaused);
-  m_pFPSActor->SetVisible(false);
-  m_crosshair->SetVisible(false);
-  m_pFollowActor->SetState(Actor::ePaused);
-  m_pFollowActor->SetVisible(false);
-  m_pOrbitActor->SetState(Actor::ePaused);
-  m_pOrbitActor->SetVisible(false);
-  m_pSplineActor->SetState(Actor::ePaused);
+Skeleton* Game::GetSkeleton(const std::string& fileName) {
+  auto iter = m_skeletons.find(fileName);
+  if (iter != m_skeletons.end()) {
+    return iter->second;
+  } else {
+    Skeleton* sk = new Skeleton();
+    if (sk->Load(fileName)) {
+      m_skeletons.emplace(fileName, sk);
+    } else {
+      delete sk;
+      sk = nullptr;
+    }
+    return sk;
+  }
+}
 
-  switch (mode) {
-    case '1':
-    default:
-      m_pFPSActor->SetState(Actor::eActive);
-      m_pFPSActor->SetVisible(true);
-      m_crosshair->SetVisible(true);
-      break;
-    case '2':
-      m_pFollowActor->SetState(Actor::eActive);
-      m_pFollowActor->SetVisible(true);
-      break;
-    case '3':
-      m_pOrbitActor->SetState(Actor::eActive);
-      m_pOrbitActor->SetVisible(true);
-      break;
-    case '4':
-      m_pSplineActor->SetState(Actor::eActive);
-      m_pSplineActor->RestartSpline();
-      break;
+Animation* Game::GetAnimation(const std::string& fileName) {
+  auto iter = m_anims.find(fileName);
+  if (iter != m_anims.end()) {
+    return iter->second;
+  } else {
+    Animation* anim = new Animation();
+    if (anim->Load(fileName)) {
+      m_anims.emplace(fileName, anim);
+    } else {
+      delete anim;
+      anim = nullptr;
+    }
+    return anim;
   }
 }

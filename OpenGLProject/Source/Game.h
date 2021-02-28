@@ -13,6 +13,8 @@
 #include "OrbitActor.h"
 #include "SplineActor.h"
 #include "SpriteComponent.h"
+#include "Skeleton.h"
+#include "Animation.h"
 
 class Game : public std::enable_shared_from_this<Game> {
  public:
@@ -43,6 +45,8 @@ class Game : public std::enable_shared_from_this<Game> {
   ///Žæ“¾
   /// 
   [[nodiscard]] Renderer* GetRenderer() { return m_pRenderer; }
+  [[nodiscard]] Skeleton* GetSkeleton(const std::string& fileName);
+  [[nodiscard]] Animation* GetAnimation(const std::string& fileName);
 
   static inline constexpr int m_kWindowWidth = 1024;
   static inline constexpr int m_kWindowHeight = 768;
@@ -63,23 +67,20 @@ class Game : public std::enable_shared_from_this<Game> {
   void UnloadData();
 
   Renderer* m_pRenderer = nullptr;
-  SpriteComponent* m_crosshair;
+  SpriteComponent* m_crosshair = nullptr;
 
   std::vector<Actor*> m_actors;
   std::vector<Actor*> m_pendingActors;
+  std::unordered_map<std::string, Skeleton*> m_skeletons;
+  std::unordered_map<std::string, Animation*> m_anims;
 
   Uint32 m_ticksCount = 0;
   bool m_isRunning = true;
   bool m_updatingActors = false;
 
-  CameraActor* m_pCameraActor = nullptr;
-  FPSActor* m_pFPSActor = nullptr;
   FollowActor* m_pFollowActor = nullptr;
-  OrbitActor* m_pOrbitActor = nullptr;
   SplineActor* m_pSplineActor = nullptr;
   Actor* m_startSphere = nullptr;
   Actor* m_endSphere = nullptr;
 
-
-  void ChangeCamera(int mode);
 };

@@ -108,6 +108,12 @@ void Shader::SetMatrixUniform(const char* a_name, const Matrix4& a_matrix)
   glUniformMatrix4fv(loc, 1, GL_TRUE, a_matrix.GetAsFloatPtr());
 }
 
+void Shader::SetMatrixUniforms(const char* name, Matrix4* matrices, unsigned count) {
+  GLuint loc = glGetUniformLocation(m_shaderProgram, name);
+  //行列データを探したuniformに送る
+  glUniformMatrix4fv(loc, count, GL_TRUE, matrices->GetAsFloatPtr());
+}
+
 void Shader::SetVectorUniform(const char* a_name, const Vector3& a_vector)
 {
     GLuint loc = glGetUniformLocation(m_shaderProgram, a_name);

@@ -7,8 +7,7 @@
 #include "MeshComponent.h"
 #include "SpriteComponent.h"
 
-Renderer::Renderer(Game* a_game)
-    : m_pGame(a_game), m_pSpriteShader(nullptr) {}
+Renderer::Renderer(Game* a_game) : m_pGame(a_game), m_pSpriteShader(nullptr) {}
 
 Renderer::~Renderer() {}
 
@@ -41,8 +40,9 @@ bool Renderer::Initialize(float a_screenWidth, float a_screenHeight) {
     SDL_GL_SetAttribute(SDL_GL_ACCELERATED_VISUAL, 1);
   }
 
-  m_pWindow = SDL_CreateWindow("OpenGL", 100, 100, static_cast<int>(m_screenWidth),
-                               static_cast<int>(m_screenHeight), SDL_WINDOW_OPENGL);
+  m_pWindow =
+      SDL_CreateWindow("OpenGL", 100, 100, static_cast<int>(m_screenWidth),
+                       static_cast<int>(m_screenHeight), SDL_WINDOW_OPENGL);
   if (!m_pWindow) {
     SDL_Log("CreateWindow Failed: %s", SDL_GetError());
     return false;
@@ -97,6 +97,8 @@ void Renderer::Shutdown() {
   m_pMeshShader = nullptr;
   m_pPhoneShader->Unload();
   m_pPhoneShader = nullptr;
+  m_pSkinnedShader->Unload();
+  m_pSkinnedShader = nullptr;
   SDL_GL_DeleteContext(m_context);
   SDL_DestroyWindow(m_pWindow);
 }
@@ -147,6 +149,22 @@ void Renderer::Draw() {
     mc->Draw(m_pPhoneShader);
   }
 
+  //! スキンメッシュがあれば、ここで描画する
+  {
+    m_pSkinnedShader->SetActive();
+
+    //! ビュー射影行列を更新
+    m_pSkinnedShader->SetMatrixUniform("uViewProj", m_view * m_projection);
+
+    //! ライティングのuniformを更新
+    SetLightUniforms(m_pSkinnedShader);
+    for (auto sk : m_skeletalMeshes) {
+      if (sk->GetVisible()) {
+        sk->Draw(m_pSkinnedShader);
+      }
+    }
+  }
+
   glDisable(GL_DEPTH_TEST);
 
   glEnable(GL_BLEND);
@@ -183,14 +201,28 @@ void Renderer::RemoveSprite(SpriteComponent* a_sprite) {
 }
 
 void Renderer::AddMeshComp(MeshComponent* a_mesh) {
-  m_meshComps[a_mesh->GetMesh()->GetShaderName().data()].emplace_back(a_mesh);
+  //!スキンメッシュ
+  if (a_mesh->GetIsSkeletal()) {
+    SkeletalMeshComponent* skMesh = static_cast<SkeletalMeshComponent*>(a_mesh);
+    m_skeletalMeshes.emplace_back(skMesh);
+  } else {  //!通常メッシュ
+    m_meshComps[a_mesh->GetMesh()->GetShaderName().data()].emplace_back(a_mesh);
+  }
 }
 
 void Renderer::RemoveMeshComp(MeshComponent* a_mesh) {
-  auto shaderName = a_mesh->GetMesh()->GetShaderName().data();
-  auto iter = std::find(m_meshComps[shaderName].begin(),
-                        m_meshComps[shaderName].end(), a_mesh);
-  m_meshComps[shaderName].erase(iter);
+  //!スキンメッシュ
+  if (a_mesh->GetIsSkeletal()) {
+    SkeletalMeshComponent* skMesh = static_cast<SkeletalMeshComponent*>(a_mesh);
+    auto iter =
+        std::find(m_skeletalMeshes.begin(), m_skeletalMeshes.end(), skMesh);
+    m_skeletalMeshes.erase(iter);
+  } else {  //!通常メッシュ
+    auto shaderName = a_mesh->GetMesh()->GetShaderName().data();
+    auto iter = std::find(m_meshComps[shaderName].begin(),
+                          m_meshComps[shaderName].end(), a_mesh);
+    m_meshComps[shaderName].erase(iter);
+  }
 }
 
 Sptr<Texture> Renderer::GetTexture(const std::string& a_fileName) {
@@ -244,19 +276,36 @@ bool Renderer::LoadShaders() {
   }
 
   m_pPhoneShader->SetActive();
-  // カメラの行列の合成
+  //! カメラの行列の合成
   m_view = Matrix4::CreateLookAt(Vector3::Zero, Vector3::UnitX, Vector3::UnitZ);
   m_projection = Matrix4::CreatePerspectiveFOV(
       Math::ToRadians(70.0f), m_screenWidth, m_screenHeight, 25.0f, 10000.0f);
   m_pPhoneShader->SetMatrixUniform("uViewProj", m_view * m_projection);
 
-    m_pMeshShader = std::make_shared<Shader>();
-  if (!m_pMeshShader->Load("../Shader/BasicMesh.vert", "../Shader/BasicMesh.frag")) {
+  m_pMeshShader = std::make_shared<Shader>();
+  if (!m_pMeshShader->Load("../Shader/BasicMesh.vert",
+                           "../Shader/BasicMesh.frag")) {
     return false;
   }
 
   m_pMeshShader->SetActive();
   m_pMeshShader->SetMatrixUniform("uViewProj", m_view * m_projection);
+
+  //! スキンメッシュ生成
+  {
+    m_pSkinnedShader = std::make_shared<Shader>();
+    if (!m_pSkinnedShader->Load("../Shader/Skinned.vert", "../Shader/Phong.frag")) {
+      return false;
+    }
+
+    m_pSkinnedShader->SetActive();
+    //! 行列の合成
+    m_view =
+        Matrix4::CreateLookAt(Vector3::Zero, Vector3::UnitX, Vector3::UnitZ);
+    m_projection = Matrix4::CreatePerspectiveFOV(
+        Math::ToRadians(70.0f), m_screenWidth, m_screenHeight, 10.0f, 10000.0f);
+    m_pSkinnedShader->SetMatrixUniform("uViewProj", m_view * m_projection);
+  }
   return true;
 }
 
@@ -270,7 +319,7 @@ void Renderer::CreateSpriteVerts() {
 
   unsigned int indices[] = {0, 1, 2, 2, 3, 0};
 
-  m_pSpriteVerts = std::make_shared<VertexArray>(vertices, 4, indices, 6);
+  m_pSpriteVerts = std::make_shared<VertexArray>(vertices, 4, VertexArray::PosNormTex, indices, 6);
 }
 
 void Renderer::SetLightUniforms(Sptr<Shader> a_shader) {
@@ -282,42 +331,46 @@ void Renderer::SetLightUniforms(Sptr<Shader> a_shader) {
   //! 平行光
   a_shader->SetVectorUniform("uDirLight.mDirection", m_dirLight.m_direction);
   a_shader->SetVectorUniform("uDirLight.mDiffuseColor",
-                           m_dirLight.m_diffuseColor);
+                             m_dirLight.m_diffuseColor);
   a_shader->SetVectorUniform("uDirLight.mSpecColor", m_dirLight.m_specColor);
 
   //! 点光源
   {
     a_shader->SetVectorUniform("uPointLight[0].mPosition",
-                             m_pointLight[0].m_position);
+                               m_pointLight[0].m_position);
     a_shader->SetVectorUniform("uPointLight[1].mPosition",
-                             m_pointLight[1].m_position);
+                               m_pointLight[1].m_position);
     a_shader->SetVectorUniform("uPointLight[2].mPosition",
-                             m_pointLight[2].m_position);
+                               m_pointLight[2].m_position);
     a_shader->SetVectorUniform("uPointLight[3].mPosition",
-                             m_pointLight[3].m_position);
+                               m_pointLight[3].m_position);
 
     a_shader->SetVectorUniform("uPointLight[0].mDiffuseColor",
-                             m_pointLight[0].m_diffuseColor);
+                               m_pointLight[0].m_diffuseColor);
     a_shader->SetVectorUniform("uPointLight[1].mDiffuseColor",
-                             m_pointLight[1].m_diffuseColor);
+                               m_pointLight[1].m_diffuseColor);
     a_shader->SetVectorUniform("uPointLight[2].mDiffuseColor",
-                             m_pointLight[2].m_diffuseColor);
+                               m_pointLight[2].m_diffuseColor);
     a_shader->SetVectorUniform("uPointLight[3].mDiffuseColor",
-                             m_pointLight[3].m_diffuseColor);
+                               m_pointLight[3].m_diffuseColor);
 
     a_shader->SetVectorUniform("uPointLight[0].mSpecColor",
-                             m_pointLight[0].m_specColor);
+                               m_pointLight[0].m_specColor);
     a_shader->SetVectorUniform("uPointLight[1].mSpecColor",
-                             m_pointLight[1].m_specColor);
+                               m_pointLight[1].m_specColor);
     a_shader->SetVectorUniform("uPointLight[2].mSpecColor",
-                             m_pointLight[2].m_specColor);
+                               m_pointLight[2].m_specColor);
     a_shader->SetVectorUniform("uPointLight[3].mSpecColor",
-                             m_pointLight[3].m_specColor);
+                               m_pointLight[3].m_specColor);
 
-    a_shader->SetFloatUniform("uPointLight[0].mRadius", m_pointLight[0].m_radius);
-    a_shader->SetFloatUniform("uPointLight[1].mRadius", m_pointLight[1].m_radius);
-    a_shader->SetFloatUniform("uPointLight[2].mRadius", m_pointLight[2].m_radius);
-    a_shader->SetFloatUniform("uPointLight[3].mRadius", m_pointLight[3].m_radius);
+    a_shader->SetFloatUniform("uPointLight[0].mRadius",
+                              m_pointLight[0].m_radius);
+    a_shader->SetFloatUniform("uPointLight[1].mRadius",
+                              m_pointLight[1].m_radius);
+    a_shader->SetFloatUniform("uPointLight[2].mRadius",
+                              m_pointLight[2].m_radius);
+    a_shader->SetFloatUniform("uPointLight[3].mRadius",
+                              m_pointLight[3].m_radius);
   }
 }
 
@@ -333,7 +386,8 @@ Vector3 Renderer::Unproject(const Vector3& a_screenPoint) const {
   return Vector3::TransformWithPerspDiv(deviceCoord, unprojection);
 }
 
-void Renderer::GetScreenDirection(Vector3& a_outStart, Vector3& a_outDir) const {
+void Renderer::GetScreenDirection(Vector3& a_outStart,
+                                  Vector3& a_outDir) const {
   //! 始点を近接平面での画面の中心にする
   Vector3 screenPoint(0.0f, 0.0f, 0.0f);
   a_outStart = Unproject(screenPoint);
