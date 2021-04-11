@@ -10,6 +10,34 @@ class Vector3;
 class Quaternion;
  void __vectorcall VecStore(Vector3* out, const __m128& in);
  void __vectorcall  QuatStore(Quaternion* out, const __m128& in);
+#define M_PI 3.14159265358979
+#define deg_to_rad(deg) (((deg) / 360) * 2 * M_PI)
+#define rad_to_deg(rad) (((rad) / 2 / M_PI) * 360)
+ namespace test{
+
+   const float tanHalfFovy = tanf(deg_to_rad(60.0f) / 2.0f);
+
+   float a_near = 0.01f;
+   float a_far = 100.0f;
+   float yScale = 1.0f / tanHalfFovy;
+   float xScale = 1.0f / (tanHalfFovy * (640.0f / 480));
+   float temp[16] = {xScale,
+                     0.0f,
+                     0.0f,
+                     0.0f,
+                     0.0f,
+                     yScale,
+                     0.0f,
+                     0.0f,
+                     0.0f,
+                     0.0f,
+                     -(a_far + a_near) / (a_far - a_near),
+                     -1.0f,
+                     0.0f,
+                     0.0f,
+                     -(2.0f * a_far * a_near) / (a_far - a_near),
+                     0.0f};
+ }
 
 namespace Math {
 const float Pi = 3.1415926535f;
@@ -17,6 +45,8 @@ const float TwoPi = Pi * 2.0f;
 const float PiOver2 = Pi / 2.0f;
 const float Infinity = std::numeric_limits<float>::infinity();
 const float NegInfinity = -std::numeric_limits<float>::infinity();
+
+
 
 inline float ToRadians(float degrees) { return degrees * Pi / 180.0f; }
 
