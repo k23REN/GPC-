@@ -84,6 +84,20 @@ inline bool NearZero(float val, float epsilon = 0.001f) {
     return false;
   }
 }
+using MVector = __m128;
+	__declspec(align(16)) struct MVECTORF32 {
+  union {
+    float f[4];
+    __m128 v;
+  };
+
+  inline operator MVector() const { return v; }
+  inline operator const float*() const { return f; }
+#if !defined(_XM_NO_INTRINSICS_) && defined(_XM_SSE_INTRINSICS_)
+  inline operator __m128i() const { return _mm_castps_si128(v); }
+  inline operator __m128d() const { return _mm_castps_pd(v); }
+#endif
+};
 
 template <typename T>
 T Max(const T& a, const T& b) {
@@ -514,7 +528,11 @@ class Matrix3 {
 // 4x4 Matrix
 class Matrix4 {
  public:
-  float mat[4][4];
+  union {
+    float mat[4][4];
+    __m128 r[4];
+  };
+
 
   Matrix4() { *this = Matrix4::Identity; }
 
@@ -727,6 +745,23 @@ class Matrix4 {
                         {0.0f, 0.0f, 1.0f, 0.0f},
                         {0.0f, 0.0f, 1.0f, 1.0f}};
     return Matrix4(temp);
+  }
+
+  Vector3 TransformPoint(const Vector3& v) const;
+
+#define XM_PERMUTE_PS(v, c) _mm_shuffle_ps(v, v, c)
+
+  	inline __m128 __vectorcall Vector3Transform(__m128 v, Matrix4 m) {
+    __m128 vResult = XM_PERMUTE_PS(v, _MM_SHUFFLE(0, 0, 0, 0));
+    vResult = _mm_mul_ps(vResult, m.r[0]);
+    __m128 vTemp = XM_PERMUTE_PS(v, _MM_SHUFFLE(1, 1, 1, 1));
+    vTemp = _mm_mul_ps(vTemp, m.r[1]);
+    vResult = _mm_add_ps(vResult, vTemp);
+    vTemp = XM_PERMUTE_PS(v, _MM_SHUFFLE(2, 2, 2, 2));
+    vTemp = _mm_mul_ps(vTemp, m.r[2]);
+    vResult = _mm_add_ps(vResult, vTemp);
+    vResult = _mm_add_ps(vResult, m.r[3]);
+    return vResult;
   }
 
   //static Matrix4 CreateFromTRS(const Vector3& translation,
